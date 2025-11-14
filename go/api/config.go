@@ -12,8 +12,12 @@ type Config struct {
 	GoogleClientSecret string
 	GoogleRedirectURL  string
 
-	AWSRegion  string
-	UsersTable string
+	AWSAccessKeyID     string
+	AWSSecretAccessKey string
+	AWSRegion          string
+	UsersTable         string
+
+	JWTSecret string
 }
 
 func Load() *Config {
@@ -27,8 +31,13 @@ func Load() *Config {
 		GoogleClientID:     os.Getenv("GOOGLE_CLIENT_ID"),
 		GoogleClientSecret: os.Getenv("GOOGLE_CLIENT_SECRET"),
 		GoogleRedirectURL:  os.Getenv("GOOGLE_REDIRECT_URL"),
+
+		AWSAccessKeyID:     os.Getenv("AWS_ACCESS_KEY_ID"),
+		AWSSecretAccessKey: os.Getenv("AWS_SECRET_ACCESS_KEY"),
 		AWSRegion:          os.Getenv("AWS_REGION"),
 		UsersTable:         os.Getenv("USERS_TABLE"),
+
+		JWTSecret: os.Getenv("JWT_SECRET"),
 	}
 
 	if cfg.GoogleClientID == "" || cfg.GoogleClientSecret == "" || cfg.GoogleRedirectURL == "" {

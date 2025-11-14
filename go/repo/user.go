@@ -1,4 +1,4 @@
-package api
+package repo
 
 import (
 	"context"
@@ -6,6 +6,7 @@ import (
 
 	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/attributevalue"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
+
 	"github.com/juhun32/patriot25-gochi/go/models"
 )
 
@@ -21,7 +22,6 @@ func NewUserRepo(client *dynamodb.Client, tableName string) *UserRepo {
 	}
 }
 
-// UpsertUser inserts or updates a user by userId
 func (r *UserRepo) UpsertUser(ctx context.Context, user *models.User) error {
 	now := time.Now().UnixMilli()
 	if user.CreatedAt == 0 {
@@ -37,6 +37,8 @@ func (r *UserRepo) UpsertUser(ctx context.Context, user *models.User) error {
 	_, err = r.client.PutItem(ctx, &dynamodb.PutItemInput{
 		TableName: &r.tableName,
 		Item:      item,
+		// You *could* add a ConditionExpression if you want
+		// to distinguish between create/update, but not required
 	})
 	return err
 }

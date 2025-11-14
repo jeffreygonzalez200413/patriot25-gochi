@@ -2,22 +2,34 @@ package api
 
 import (
 	"context"
-	"fmt"
 	"net/http"
+	"time"
 
+	"github.com/golang-jwt/jwt/v5"
 	"github.com/juhun32/patriot25-gochi/go/google"
 	"github.com/juhun32/patriot25-gochi/go/models"
+	"github.com/juhun32/patriot25-gochi/go/repo"
 )
 
 type AuthHandler struct {
-	Google   *google.GoogleOAuth
-	UserRepo *UserRepo
+	Google      *google.GoogleOAuth
+	UserRepo    *repo.UserRepo
+	JWTSecret   string
+	FrontendURL string
 }
 
-func NewAuthHandler(google *google.GoogleOAuth, userRepo *UserRepo) *AuthHandler {
+type Claims struct {
+	UserID string `json:"userId"`
+	Email  string `json:"email"`
+	jwt.RegisteredClaims
+}
+
+func NewAuthHandler(google *google.GoogleOAuth, userRepo *repo.UserRepo, jwtSecret, frontendURL string) *AuthHandler {
 	return &AuthHandler{
-		Google:   google,
-		UserRepo: userRepo,
+		Google:      google,
+		UserRepo:    userRepo,
+		JWTSecret:   jwtSecret,
+		FrontendURL: frontendURL,
 	}
 }
 
@@ -32,7 +44,6 @@ func (h *AuthHandler) GoogleLogin(w http.ResponseWriter, r *http.Request) {
 func (h *AuthHandler) GoogleCallback(w http.ResponseWriter, r *http.Request) {
 	ctx := context.Background()
 
-	// Check error from Google
 	if errMsg := r.URL.Query().Get("error"); errMsg != "" {
 		http.Error(w, "Google error: "+errMsg, http.StatusBadRequest)
 		return
@@ -62,8 +73,56 @@ func (h *AuthHandler) GoogleCallback(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// TODO: set your own session / JWT here.
-	// For now, just respond with user info (for debugging)
-	w.Header().Set("Content-Type", "application/json")
-	_, _ = w.Write([]byte(fmt.Sprintf(`{"userId":"%s","email":"%s","name":"%s"}`, user.UserID, user.Email, user.Name)))
+	// Generate JWT
+	token, err := GenerateJWT(h.JWTSecret, user.UserID, user.Email, 7*24*time.Hour)
+	if err != nil {
+		http.Error(w, "failed to generate token: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	// Set cookie (adjust Secure/SameSite in production)
+	http.SetCookie(w, &http.Cookie{
+		Name:     "ppet_token",
+		Value:    token,
+		Path:     "/",
+		HttpOnly: false,
+		Secure:   false, // true in HTTPS/prod
+		SameSite: http.SameSiteLaxMode,
+		MaxAge:   int((7 * 24 * time.Hour).Seconds()),
+	})
+
+	// Redirect back to your frontend app
+	redirect := h.FrontendURL
+	if redirect == "" {
+		redirect = "http://localhost:3000/app"
+	}
+	http.Redirect(w, r, redirect, http.StatusFound)
+}
+
+// JWT generation and validation functions
+func GenerateJWT(secret, userID, email string, ttl time.Duration) (string, error) {
+	now := time.Now()
+	claims := Claims{
+		UserID: userID,
+		Email:  email,
+		RegisteredClaims: jwt.RegisteredClaims{
+			ExpiresAt: jwt.NewNumericDate(now.Add(ttl)),
+			IssuedAt:  jwt.NewNumericDate(now),
+		},
+	}
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+	return token.SignedString([]byte(secret))
+}
+
+func ParseAndValidateJWT(secret, tokenString string) (*Claims, error) {
+	token, err := jwt.ParseWithClaims(tokenString, &Claims{}, func(token *jwt.Token) (interface{}, error) {
+		return []byte(secret), nil
+	})
+	if err != nil {
+		return nil, err
+	}
+	if claims, ok := token.Claims.(*Claims); ok && token.Valid {
+		return claims, nil
+	}
+	return nil, jwt.ErrTokenInvalidClaims
 }
