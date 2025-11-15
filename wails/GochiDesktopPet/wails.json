@@ -1,0 +1,21 @@
+{
+  "$schema": "https://wails.io/schemas/config.v2.json",
+  "name": "GochiDesktopPet",
+  "outputfilename": "GochiDesktopPet",
+  "windows": {
+    "width": 300,
+    "height": 300,
+    "transparent": true,
+    "decorated": false,
+    "alwaysOnTop": true
+  },
+  "frontend:install": "npm install",
+  "frontend:build": "npm run build",
+  "frontend:dev:watcher": "npm run dev",
+  "frontend:dev:serverUrl": "auto",
+  "author": {
+    "name": "",
+    "email": ""
+  }
+}
+

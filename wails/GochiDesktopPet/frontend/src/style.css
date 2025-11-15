@@ -1,0 +1,33 @@
+html, body, #root, #pet {
+    margin: 0;
+    padding: 0;
+    width: 300px;
+    height: 300px;
+    background: transparent;
+    overflow: hidden;
+    font-family: sans-serif;
+}
+
+@font-face {
+    font-family: 'CustomGochiLogoFont';
+    src: url(/Users/jeffreygonzalez/Library/Fonts/Nougat-ExtraBlack.ttf) format("truetype");
+    font-weight: normal;
+    font-size: normal;
+
+}
+
+@font-face {
+    font-family: 'CustomDefaultFont';
+    src: url(/Users/jeffreygonzalez/Library/Fonts/AlteHaasGroteskRegular.ttf) format("truetype");
+    font-weight: normal;
+    font-size: normal;
+
+}
+
+
+#pet {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
