@@ -5,9 +5,9 @@ url = "http://127.0.0.1:8765/respond"
 payload = {
     "userMessage": "i finished two tasks but i'm still tired",
     "state": {
-        "mood": "neutral",
-        "personality": "supportive",
-        "completionRate": 0.4,
+        "mood": "sad",
+        "personality": "judgmental",
+        "completionRate": 0.8,
         "totalInteractions": 3,
     },
 }
